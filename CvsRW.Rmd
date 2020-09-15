@@ -1,0 +1,512 @@
+---
+title: "Colors vs Real-World Objects"
+output:
+  pdf_document: default
+  html_notebook: default
+  '': default
+---
+Basic Setup
+```{r echo=FALSE}
+if (exists("colorList")) {
+  rm(colorList)
+}
+library(tidyverse)
+library(lsr)
+library(readr)
+library(mosaic)
+library(ggplot2)
+library(scales)
+require(knitr)
+setwd("/home/lina/CvsRWO/")
+```
+Import Colors
+```{r echo =FALSE}
+
+dateiNamen <- dir(path="./Colors",pattern="colors_....txt")
+for (datei in dateiNamen) {
+  eingabeDatei <- paste("./Colors/",datei,sep="")
+  color_temp <- read_delim(eingabeDatei,"\t", escape_double = FALSE, trim_ws = TRUE)
+  if (exists("colorList")) {
+    colorList <- rbind(colorList,color_temp)
+  } else {
+    colorList <- color_temp
+  }
+}
+colnames(colorList)[1] <- "subject"
+rm (color_temp)
+rm (datei)
+rm (dateiNamen)
+rm (eingabeDatei)
+## @knitr addColumns
+colorList <- colorList %>% mutate(answer_change = (((responses-200)%%10))%/%2)
+colorList <- colorList %>% mutate(answer_correct = if_else(responses-200 < 10,1,0))
+colorList <- colorList %>% mutate(signal_detection = 2*change + answer_correct)
+colorList <- colorList %>% mutate(age = if_else(subject-100 > 100,"old","young"))
+colorList %>% 
+  mutate(color_text = car::recode(.$color, "1 = 'rot';
+                                  2 = 'grün';
+                                  3 = 'blau';
+                                  4 = 'gelb';
+                                  5 = 'pink';
+                                  6 = 'schwarz';
+                                  7 = 'orange';
+                                  8 = 'türkis'", 
+                                  as.factor = TRUE)) -> colorList
+colorList %>% 
+  mutate(signal_detection_text = car::recode(.$signal_detection, "0 = 'false alarm';
+                                             1 = 'correct rejection'; 
+                                             2 = 'miss'; 
+                                             3 = 'hit'")) -> colorList
+## @knitr create colorResult
+colorGroup <- group_by(colorList, subject,age ,condition)
+summarize(colorGroup,
+          totalCases = n(), 
+          correct_answer = sum(answer_correct == 1) ,
+          mean_answer_correct = mean(answer_correct), 
+          mean_response_time = mean(time),
+          median_response_time = median(time),
+          falseAlarm = sum(signal_detection == 0),
+          correct_rejection = sum(signal_detection == 1), 
+          miss = sum(signal_detection == 2), 
+          hit = sum(signal_detection == 3)) %>% 
+            mutate (noChangeTotal = falseAlarm+correct_rejection) %>% 
+            mutate(changeTotal = miss+hit) %>% 
+            mutate(falseAlarmRate = falseAlarm / noChangeTotal) %>% 
+            mutate(hitRate = hit / changeTotal) %>% 
+            mutate(kPashler = condition*(hitRate-falseAlarmRate)/(1-falseAlarmRate)) %>% 
+            mutate(k = condition*(hitRate - falseAlarmRate)) %>% 
+            mutate(joinKey = paste0(subject,condition)) -> colorListResult
+```
+
+Import Objects
+
+```{r echo=FALSE}
+rm(objectList) # Aufräumen von alten Daten
+# Create the mode function.
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+dateiNamen <- dir(path="./Objects",pattern="object_....txt")
+for (datei in dateiNamen) {
+  eingabeDatei <- paste("./Objects/",datei,sep="")
+  object_temp <- read_delim(eingabeDatei,"\t", escape_double = FALSE, trim_ws = TRUE)
+  if (exists("objectList")) {
+    objectList <- rbind(objectList,object_temp)
+  } else {
+    objectList <- object_temp
+  }
+}
+colnames(objectList)[1] <- "subject"
+rm (object_temp)
+rm (datei)
+rm (dateiNamen)
+rm (eingabeDatei)
+objectList <- objectList %>% mutate(answer_change = (((responses-200)%%10))%/%2)
+objectList <- objectList %>% mutate(answer_correct = if_else(responses-200 < 10,1,0))
+objectList <- objectList %>% mutate(signal_detection = 2*change + answer_correct)
+objectList <- objectList %>% mutate(age = if_else(subject-100 > 100,"old","young"))
+objectList <- objectList %>% mutate(condition_text = if_else(condition == 1,"novel",if_else(condition == 2,"exemplar",if_else(condition == 3,"state","feature"))))
+objectList <- objectList %>% mutate(signal_detection_text = if_else(signal_detection == 0,"false alarm",if_else(signal_detection == 1,"correct rejection",if_else(signal_detection == 2,"miss","hit"))))
+objectList <- objectList %>% mutate(pic_num = as.numeric(Pic)) %>% tidyr::replace_na(list( pic_num = 0))
+#sumObjectAll <- count(objectList, setsize, signal_detection_text)
+#sumObjectByAgeSetSize <- count(objectList, age, setsize, signal_detection_text)
+#sumObjectBySubject <- count(objectList, subject, setsize, signal_detection_text)
+objectGroupBySubAgeSet <- group_by(objectList, subject, age, setsize)
+summarise(objectGroupBySubAgeSet, totalCases = n(), 
+          mean_answer_correct = mean(answer_correct), 
+          mean_response_time = mean(time_1),
+          median_response_time = median(time_1),
+          sum_answer_correct = sum(answer_correct), 
+          sum_of_changes = sum(change == 1),
+          sum_of_noChanges = sum(change == 0),
+          falseAlarm = sum(signal_detection == 0), 
+          correct_rejections = sum(signal_detection == 1),
+          miss = sum(signal_detection == 2),
+          hit = sum(signal_detection == 3), 
+          totalOfChange = correct_rejections+falseAlarm,
+          totalOfHit = hit+miss,
+          falseAlarmRate = falseAlarm/totalOfChange, 
+          hitRate = hit/totalOfHit) %>% 
+  mutate(k = setsize*(hitRate-falseAlarmRate)) %>% 
+  mutate(kPashler = setsize*(hitRate-falseAlarmRate)/(1-falseAlarmRate)) %>% 
+  mutate(joinKey = paste0(subject,setsize)) -> objectResult
+objectGroupBySubAgeSetCon <- group_by(objectList, subject, age, setsize,condition_text)
+summarise(objectGroupBySubAgeSetCon, totalCases = n(), 
+          mean_answer_correct = mean(answer_correct),
+          mean_response_time = mean(time_1),
+          median_response_time = median(time_1),
+          sum_answer_correct = sum(answer_correct), 
+          sum_of_changes = sum(change == 1),
+          sum_of_noChanges = sum(change == 0),
+          falseAlarm = sum(signal_detection == 0), 
+          correct_rejections = sum(signal_detection == 1),
+          miss = sum(signal_detection == 2),
+          hit = sum(signal_detection == 3), 
+          totalOfChange = correct_rejections+falseAlarm,
+          totalOfHit = hit+miss,
+          falseAlarmRate = falseAlarm/totalOfChange, 
+          hitRate = hit/totalOfHit) %>% 
+  mutate(k = setsize*(hitRate-falseAlarmRate)) %>% 
+  mutate(kPashler = setsize*(hitRate-falseAlarmRate)/(1-falseAlarmRate)) %>% 
+  mutate(joinKey = paste0(subject,setsize)) -> objectResultCondition
+objectGroupBySubject <- group_by(objectList, subject, age)
+summarise(objectGroupBySubject, 
+          SetSize2_correct = mean(answer_correct[setsize == 2]),
+          SetSize4_correct = mean(answer_correct[setsize == 4]),
+          SetSize6_correct = mean(answer_correct[setsize == 6]),
+          SetSize2_sd = sd(answer_correct[setsize == 2]),
+          SetSize4_sd = sd(answer_correct[setsize == 4]),
+          SetSize6_sd = sd(answer_correct[setsize == 6]),
+          SetSize2_var = var(answer_correct[setsize == 2]),
+          SetSize4_var = var(answer_correct[setsize == 4]),
+          SetSize6_var = var(answer_correct[setsize == 6]),
+          SetSize2_aad = aad(answer_correct[setsize == 2]),
+          SetSize4_aad = aad(answer_correct[setsize == 4]),
+          SetSize6_aad = aad(answer_correct[setsize == 6]),
+          SetSize2_time = median(time_1[setsize == 2]),
+          SetSize4_time = median(time_1[setsize == 4]),
+          SetSize6_time = median(time_1[setsize == 6]),
+          ) -> objectResultSetSize
+
+objectGroupAge <- group_by(objectResult, age)
+summarise(objectGroupAge,
+          SetSize2 = mean(mean_answer_correct[setsize == 2]),
+          SetSize4 = mean(mean_answer_correct[setsize == 4]),
+          SetSize6 = mean(mean_answer_correct[setsize == 6]),
+          hit_2 = mean(hit[setsize == 2]),
+          hit_4 = mean(hit[setsize == 4]),
+          hit_6 = mean(hit[setsize == 6]),
+          miss_2 = mean(miss[setsize == 2]),
+          miss_4 = mean(miss[setsize == 4]),
+          miss_6 = mean(miss[setsize == 6]),
+          falseAlarmRate_Set_2 = mean(falseAlarmRate[setsize == 2]),
+          falseAlarmRate_Set_4 = mean(falseAlarmRate[setsize == 4]),
+          falseAlarmRate_Set_6 = mean(falseAlarmRate[setsize == 6]),
+          HitRate_Set_2 = mean(hitRate[setsize == 2]),
+          HitRate_Set_4 = mean(hitRate[setsize == 4]),
+          HitRate_Set_6 = mean(hitRate[setsize == 6]),
+          K_2_mean = mean(k[setsize == 2]),
+          K_4_mean = mean(k[setsize == 4]),
+          K_6_mean = mean(k[setsize == 6]),
+          K_2_median = median(k[setsize == 2]),
+          K_4_median = median(k[setsize == 4]),
+          K_6_median = median(k[setsize == 6]),
+          K_2_Max = max(k[setsize == 2]),
+          K_4_Max = max(k[setsize == 4]),
+          K_6_Max = max(k[setsize == 6])) -> objectResultGroupAge
+
+objectGroupAgeCon <- group_by(objectResultCondition, age)
+summarise(objectGroupAgeCon,
+          SetSize2 = mean(mean_answer_correct[setsize == 2]),
+          SetSize4 = mean(mean_answer_correct[setsize == 4]),
+          SetSize6 = mean(mean_answer_correct[setsize == 6]),
+          hit_2 = mean(hit[setsize == 2]),
+          hit_4 = mean(hit[setsize == 4]),
+          hit_6 = mean(hit[setsize == 6]),
+          miss_2 = mean(miss[setsize == 2]),
+          miss_4 = mean(miss[setsize == 4]),
+          miss_6 = mean(miss[setsize == 6]),
+          falseAlarmRate_Set_2 = mean(falseAlarmRate[setsize == 2]),
+          falseAlarmRate_Set_4 = mean(falseAlarmRate[setsize == 4]),
+          falseAlarmRate_Set_6 = mean(falseAlarmRate[setsize == 6]),
+          HitRate_Set_2 = mean(hitRate[setsize == 2]),
+          HitRate_Set_4 = mean(hitRate[setsize == 4]),
+          HitRate_Set_6 = mean(hitRate[setsize == 6]),
+          K_2_mean = mean(k[setsize == 2]),
+          K_4_mean = mean(k[setsize == 4]),
+          K_6_mean = mean(k[setsize == 6]),
+          K_2_median = median(k[setsize == 2]),
+          K_4_median = median(k[setsize == 4]),
+          K_6_median = median(k[setsize == 6]),
+          K_2_Max = max(k[setsize == 2]),
+          K_4_Max = max(k[setsize == 4]),
+          K_6_Max = max(k[setsize == 6])) -> objectResultGroupAgeCondition
+
+colorGroupAge <- group_by(colorListResult, age)
+summarise(colorGroupAge,
+          SetSize2 = mean(mean_answer_correct[condition == 2]),
+          SetSize4 = mean(mean_answer_correct[condition == 4]),
+          SetSize6 = mean(mean_answer_correct[condition == 6]),
+          hit_2 = mean(hit[condition == 2]),
+          hit_4 = mean(hit[condition == 4]),
+          hit_6 = mean(hit[condition == 6]),
+          miss_2 = mean(miss[condition == 2]),
+          miss_4 = mean(miss[condition == 4]),
+          miss_6 = mean(miss[condition == 6]),
+          falseAlarmRate_Set_2 = mean(falseAlarmRate[condition == 2]),
+          falseAlarmRate_Set_4 = mean(falseAlarmRate[condition == 4]),
+          falseAlarmRate_Set_6 = mean(falseAlarmRate[condition == 6]),
+          HitRate_Set_2 = mean(hitRate[condition == 2]),
+          HitRate_Set_4 = mean(hitRate[condition == 4]),
+          HitRate_Set_6 = mean(hitRate[condition == 6]),
+          K_2_mean = mean(k[condition == 2]),
+          K_4_mean = mean(k[condition == 4]),
+          K_6_mean = mean(k[condition == 6]),
+          K_2_median = median(k[condition == 2]),
+          K_4_median = median(k[condition == 4]),
+          K_6_median = median(k[condition == 6]),
+          K_2_Max = max(k[condition == 2]),
+          K_4_Max = max(k[condition == 4]),
+          K_6_Max = max(k[condition == 6])) -> colorResultGroupAge
+
+```
+join color & objects
+```{r}
+colorListResult %>%ungroup() %>%  select(age,condition,mean_answer_correct,mean_response_time,kPashler,k,joinKey) -> ColorJoin
+names(ColorJoin) <- c("age_c","condition_c","mean_answer_correct_c","mean_response_time_c","kPashler_c","k_c","joinKey") 
+objectResult %>% inner_join(ColorJoin,by = "joinKey")  %>% 
+  mutate(diffAnswerRate = mean_answer_correct-mean_answer_correct_c)%>% 
+  mutate(diffK = k-k_c)-> testsJoined
+objectResultCondition %>% inner_join(ColorJoin,by = "joinKey") -> testConditionJoined
+colorListResult %>% ungroup() %>% select(subject,age,condition,mean_answer_correct,mean_response_time,kPashler,k) %>% mutate(test="color") %>% rename(setsize = condition) -> ColorJoinLong
+objectResult %>%  ungroup() %>% select(subject,age,setsize,mean_answer_correct,mean_response_time,kPashler,k) %>% mutate(test="object") -> ObjectJoinLong
+joinedTestList = rbind(ObjectJoinLong,ColorJoinLong)
+```
+
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+Erster Schritt Überblick der Gesamtanzahl der falschen und richtigen Antworten
+```{r echo=FALSE}
+countList <- colorList %>% count(answer_correct,condition) %>% rename(Antwort = answer_correct) %>% mutate(Antwort = factor(Antwort, levels = c(0,1),labels = c("richtig", "falsch")))
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+Gib eine Tabelle mit den zusammenfassenden Daten für Color & Objects aus
+```{r}
+colorList %>% group_by(condition,age) %>% summarise(Gesamt = n(),Richtig = sum(answer_correct == 1),Falsch = sum(answer_correct == 0), ProzentRichtig = scales::percent(round(mean(answer_correct == 1),2)),ProzentFalsch = scales::percent(round(mean(answer_correct == 0),2))) %>% rename(SetSize = condition) %>% kable(caption = "Überblick Versuchsreihe Color",align = "llcccrr")
+
+objectList %>% group_by(setsize,age) %>% summarise(Gesamt = n(),Richtig = sum(answer_correct == 1),Falsch = sum(answer_correct == 0), ProzentRichtig = scales::percent(round(mean(answer_correct == 1),2)),ProzentFalsch = scales::percent(round(mean(answer_correct == 0),2))) %>% kable(caption = "Überblick Versuchsreihe Real world objects",align = "llcccrr")
+
+#colorListResult %>% ungroup() %>% group_by(age,condition) %>% summarise(mean(hitRate),mean(falseAlarmRate),mean(k),mean(kPashler))%>% kable(caption = "Überblick Versuchsreihe Color objects K",align = "llcccrr")
+
+
+```
+
+
+Plotte einen Überblick der Gesamtmenge
+```{r}
+
+colorList %>% mutate(age=factor(age, levels = c("young","old")),
+             answer_correct=factor(answer_correct, levels = c(0,1),labels = c("False","Correct"))) %>%
+  group_by(age,condition,answer_correct) %>% summarise(N=n()) %>% ungroup() %>%
+  group_by(age,condition) %>% 
+  mutate(Total=sum(N),Percent=N/Total,
+         Lab=paste0(N,' (',paste0(round(100*Percent,0),'%'),')')) -> SumsColors
+#Plot
+ggplot(SumsColors,aes(x=age,y=N,fill=answer_correct))+
+  geom_bar(stat='identity',position = position_stack())+
+  facet_wrap(.~condition,scales = 'free')+
+  geom_text(aes(label=Lab),position = position_stack(vjust = .5),size=3)+
+  geom_text(aes(y=Total,label=Total),vjust=-0.25,size=3)+
+  labs(title="Colors",subtitle = "per setsize grouped by age", x="age", y="# answer correct", fill="Answer")+scale_fill_brewer(palette = "Pastel1")+
+  ylim(0, 1400)
+
+objectList %>% mutate(age=factor(age, levels = c("young","old")),
+             answer_correct=factor(answer_correct, levels = c(0,1),labels = c("False","Correct"))) %>%
+  group_by(age,setsize,answer_correct) %>% summarise(N=n()) %>% ungroup() %>%
+  group_by(age,setsize) %>% 
+  mutate(Total=sum(N),Percent=N/Total,
+         Lab=paste0(N,' (',paste0(round(100*Percent,0),'%'),')')) -> SumsObjects
+#Plot
+ggplot(SumsObjects,aes(x=age,y=N,fill=answer_correct))+
+  geom_bar(stat='identity',position = position_stack())+
+  facet_wrap(.~setsize,scales = 'free')+
+  geom_text(aes(label=Lab),position = position_stack(vjust = .5),size=3)+
+  geom_text(aes(y=Total,label=Total),vjust=-0.25,size=3)+
+  labs(title="Real world objects",subtitle = "per setsize grouped by age", x="age", y="# answer correct", fill="Answer")+scale_fill_brewer(palette = "Pastel1")
+
+```
+Plotte die Streuung von Colors und real objects
+
+```{r}
+colorListResult %>%  ggplot(mapping=aes(x=age, y=mean_answer_correct,fill=age)) + geom_violin() + geom_jitter(width = 0.2, alpha = 0.6)+scale_y_continuous(labels = scales::percent)+labs(title="Colors",subtitle = "distribution test persons mean value of correct answers", x="age", y="mean answers correct", fill="Answer")
+
+objectResult %>%  ggplot(mapping=aes(x=age, y=mean_answer_correct,fill=age)) + geom_violin() + geom_jitter(width = 0.2, alpha = 0.6)+scale_y_continuous(labels = scales::percent)+labs(title="Real world objects",subtitle = "distribution test persons mean value of correct answers", x="age", y="mean answers correct", fill="Answer")
+
+colorListResult %>%  ggplot(mapping=aes(x=age, y=mean_answer_correct,fill=age))+ geom_violin() + geom_jitter(width = 0.2, alpha = 0.6)+facet_wrap(.~condition,scales = 'free')+scale_y_continuous(labels = scales::percent)+labs(title="Colors",subtitle = "distribution test persons mean value of correct answers", x="age", y="mean answers correct", fill="Answer")
+
+objectResult %>%  ggplot(mapping=aes(x=age, y=mean_answer_correct,fill=age))+ geom_violin() + geom_jitter(width = 0.2, alpha = 0.6)+facet_wrap(.~setsize,scales = 'free')+scale_y_continuous(labels = scales::percent)+labs(title="Real world objects",subtitle = "distribution test persons mean value of correct answers", x="age", y="mean answers correct", fill="Answer")
+
+colorListResult %>%  ggplot(mapping=aes(x=age, y=mean_answer_correct,fill=age)) + geom_boxplot() + geom_jitter(width = 0.2, alpha = 0.6)+scale_y_continuous(labels = scales::percent)+labs(title="Colors",subtitle = "distribution test persons mean value of correct answers", x="age", y="mean answers correct", fill="Answer")
+
+objectResult %>%  ggplot(mapping=aes(x=age, y=mean_answer_correct,fill=age)) + geom_boxplot() + geom_jitter(width = 0.2, alpha = 0.6)+scale_y_continuous(labels = scales::percent)+labs(title="Real world objects",subtitle = "distribution test persons mean value of correct answers", x="age", y="mean answers correct", fill="Answer")
+
+colorListResult %>%  ggplot(mapping=aes(x=age, y=mean_answer_correct,fill=age))+ geom_boxplot() + geom_jitter(width = 0.2, alpha = 0.6)+facet_wrap(.~condition,scales = 'free')+scale_y_continuous(labels = scales::percent)+labs(title="Colors",subtitle = "distribution test persons mean value of correct answers", x="age", y="mean answers correct", fill="Answer")
+
+objectResult %>%  ggplot(mapping=aes(x=age, y=mean_answer_correct,fill=age))+ geom_boxplot() + geom_jitter(width = 0.2, alpha = 0.6)+facet_wrap(.~setsize,scales = 'free')+scale_y_continuous(labels = scales::percent)+labs(title="Real world objects",subtitle = "distribution test persons mean value of correct answers", x="age", y="mean answers correct", fill="Answer")
+```
+
+Häufigkeitsverteilung
+```{r}
+colorListResult %>%  ggplot(mapping=aes(x=mean_answer_correct, fill=age))+ geom_histogram(bins = 20)+labs(title="Colors",subtitle = "Häufigkeiten korrekter Antworten", x="Mean answers correct")+scale_x_continuous(labels = scales::percent)
+
+colorListResult %>%  ggplot(mapping=aes(x=mean_answer_correct, fill=age))+ geom_histogram(bins=20)+facet_wrap(.~condition,scales = 'free')+scale_x_continuous(labels = scales::percent)+labs(title="Colors",subtitle = "Häufigkeiten korrekter Antworten", x="Mean answers correct")
+
+objectResult %>%  ggplot(mapping=aes(x=mean_answer_correct, fill=age))+ geom_histogram(bins=20)+labs(title="Real world objects",subtitle = "Häufigkeiten korrekter Antworten", x="Mean answers correct")+scale_x_continuous(labels = scales::percent)
+
+objectResult %>%  ggplot(mapping=aes(x=mean_answer_correct, fill=age))+ geom_histogram(bins=20)+facet_wrap(.~setsize,scales = 'free')+scale_x_continuous(labels = scales::percent)+labs(title="Real world objects",subtitle = "Häufigkeiten korrekter Antworten", x="Mean answers correct")
+
+colorListResult %>%  ggplot(mapping=aes(x=mean_answer_correct, fill=age))+ geom_density (alpha=0.2)+labs(title="Colors",subtitle = "Häufigkeiten korrekter Antworten", x="Mean answers correct")+scale_x_continuous(labels = scales::percent)
+
+colorListResult %>%  ggplot(mapping=aes(x=mean_answer_correct, fill=age))+ geom_density( alpha=0.2)+facet_wrap(.~condition,scales = 'free')+scale_x_continuous(labels = scales::percent)+labs(title="Colors",subtitle = "Häufigkeiten korrekter Antworten", x="Mean answers correct")
+
+objectResult %>%  ggplot(mapping=aes(x=mean_answer_correct, fill=age))+ geom_density(alpha=0.2)+labs(title="Real world objects",subtitle = "Häufigkeiten korrekter Antworten", x="Mean answers correct")+scale_x_continuous(labels = scales::percent)
+
+objectResult %>%  ggplot(mapping=aes(x=mean_answer_correct, fill=age))+ geom_density(alpha=0.2)+facet_wrap(.~setsize,scales = 'free')+scale_x_continuous(labels = scales::percent)+labs(title="Real world objects",subtitle = "Häufigkeiten korrekter Antworten", x="Mean answers correct")
+```
+Vergleich Color vs. Objects gleiche Altersgruppen
+
+```{r}
+joinedTestList %>%  ggplot(mapping=aes(x=mean_answer_correct, fill=test))+ geom_density (alpha=0.2)+labs(title="Colors vs Object",subtitle = "Häufigkeiten korrekter Antworten", x="Mean answers correct")+scale_x_continuous(labels = scales::percent)
+joinedTestList %>%  ggplot(mapping=aes(x=mean_answer_correct, fill=test))+ geom_density (alpha=0.2)+facet_wrap(.~setsize,scales = 'free')+labs(title="Colors vs Object",subtitle = "Häufigkeiten korrekter Antworten per Set Größe", x="Mean answers correct")+scale_x_continuous(labels = scales::percent)
+```
+
+
+Korrelation 
+```{r}
+colorListResult %>% ggplot(aes(x=mean_answer_correct, y=mean_response_time,color = age))+geom_point()+geom_smooth(method = lm, se = FALSE)
+colorListResult %>% ggplot(aes(x=mean_answer_correct, y=mean_response_time,color = age))+geom_point()+geom_smooth(method = "loess", span = 0.15, method.args = list(degree=1))
+colorListResult %>% ggplot(aes(x=mean_answer_correct, y=mean_response_time,color = age))+geom_point()+geom_smooth(method = lm, se = FALSE)+facet_wrap(.~condition,scales = 'free')
+objectResult %>% ggplot(aes(x=mean_answer_correct, y=mean_response_time,color = age))+geom_point()+geom_smooth(method = lm, se = FALSE)
+objectResult %>% ggplot(aes(x=mean_answer_correct, y=mean_response_time,color = age))+geom_point()+geom_smooth(method = lm, se = FALSE)+facet_wrap(.~setsize,scales = 'free')
+
+```
+objectResult %>% filter(age=="young",setsize==6) %>% ungroup %>% select(mean_answer_correct) -> testIt
+shapiro.test(testIt$mean_answer_correct)
+
+Normalverteilung:
+```{r}
+colorListResult %>% filter(condition==2,age=="old") -> df_means_o2
+fromTo <- round(range(df_means_o2$mean_answer_correct),2)+c(-0.08,0.08)
+limits <- seq(from=fromTo[1], to=fromTo[2], by=0.02)
+hist(df_means_o2$mean_answer_correct,freq=FALSE,xlim = fromTo ,xlab = "Mittelwert korrekte Antworten",ylab = "relative Häufigkeit",breaks=limits,main = "Histogramm & Normalverteilung für Old, Setsize 2")
+rug(jitter(df_means_o2$mean_answer_correct))
+curve(dnorm(x,mean(df_means_o2$mean_answer_correct),sd(df_means_o2$mean_answer_correct)),lwd=2,col="blue",add=TRUE)
+colorListResult %>% filter(condition==4,age=="old") -> df_means_o4
+fromTo <- round(range(df_means_o4$mean_answer_correct),2)+c(-0.08,0.08)
+limits <- seq(from=fromTo[1], to=fromTo[2], by=0.02)
+hist(df_means_o4$mean_answer_correct,freq=FALSE,xlim = fromTo ,xlab = "Mittelwert korrekte Antworten",ylab = "relative Häufigkeit",breaks=limits,main = "Histogramm & Normalverteilung für Old, Setsize 4")
+rug(jitter(df_means_o4$mean_answer_correct))
+curve(dnorm(x,mean(df_means_o4$mean_answer_correct),sd(df_means_o4$mean_answer_correct)),lwd=2,col="blue",add=TRUE)
+colorListResult %>% filter(condition==6,age=="old") -> df_means_o6
+fromTo <- round(range(df_means_o6$mean_answer_correct),2)+c(-0.08,0.08)
+limits <- seq(from=fromTo[1], to=fromTo[2], by=0.02)
+hist(df_means_o6$mean_answer_correct,freq=FALSE,xlim = fromTo ,xlab = "Mittelwert korrekte Antworten",ylab = "relative Häufigkeit",breaks=limits,main = "Histogramm & Normalverteilung für Old, Setsize 6")
+rug(jitter(df_means_o6$mean_answer_correct))
+curve(dnorm(x,mean(df_means_o6$mean_answer_correct),sd(df_means_o6$mean_answer_correct)),lwd=2,col="blue",add=TRUE)
+colorListResult %>% filter(condition==8,age=="old") -> df_means_o8
+fromTo <- round(range(df_means_o8$mean_answer_correct),2)+c(-0.08,0.08)
+limits <- seq(from=fromTo[1], to=fromTo[2], by=0.02)
+hist(df_means_o8$mean_answer_correct,freq=FALSE,xlim = fromTo ,xlab = "Mittelwert korrekte Antworten",ylab = "relative Häufigkeit",breaks=limits,main = "Histogramm & Normalverteilung für Old, Setsize 8")
+rug(jitter(df_means_o8$mean_answer_correct))
+curve(dnorm(x,mean(df_means_o8$mean_answer_correct),sd(df_means_o8$mean_answer_correct)),lwd=2,col="blue",add=TRUE)
+colorListResult %>% filter(condition==2,age=="young") -> df_means_y2
+fromTo <- round(range(df_means_y2$mean_answer_correct),2)+c(-0.08,0.08)
+limits <- seq(from=fromTo[1], to=fromTo[2], by=0.02)
+hist(df_means_y2$mean_answer_correct,freq=FALSE,xlim = fromTo ,xlab = "Mittelwert korrekte Antworten",ylab = "relative Häufigkeit",breaks=limits,main = "Histogramm & Normalverteilung für Young, Setsize 2")
+rug(jitter(df_means_y2$mean_answer_correct))
+curve(dnorm(x,mean(df_means_y2$mean_answer_correct),sd(df_means_y2$mean_answer_correct)),lwd=2,col="blue",add=TRUE)
+colorListResult %>% filter(condition==4,age=="young") -> df_means_y4
+fromTo <- round(range(df_means_y4$mean_answer_correct),2)+c(-0.08,0.08)
+limits <- seq(from=fromTo[1], to=fromTo[2], by=0.02)
+hist(df_means_y4$mean_answer_correct,freq=FALSE,xlim = fromTo ,xlab = "Mittelwert korrekte Antworten",ylab = "relative Häufigkeit",breaks=limits,main = "Histogramm & Normalverteilung für Young, Setsize 4")
+rug(jitter(df_means_y4$mean_answer_correct))
+curve(dnorm(x,mean(df_means_y4$mean_answer_correct),sd(df_means_y4$mean_answer_correct)),lwd=2,col="blue",add=TRUE)
+colorListResult %>% filter(condition==6,age=="young") -> df_means_y6
+fromTo <- round(range(df_means_y6$mean_answer_correct),2)+c(-0.08,0.08)
+limits <- seq(from=fromTo[1], to=fromTo[2], by=0.02)
+hist(df_means_y6$mean_answer_correct,freq=FALSE,xlim = fromTo ,xlab = "Mittelwert korrekte Antworten",ylab = "relative Häufigkeit",breaks=limits,main = "Histogramm & Normalverteilung für Young, Setsize 6")
+rug(jitter(df_means_y6$mean_answer_correct))
+curve(dnorm(x,mean(df_means_y6$mean_answer_correct),sd(df_means_y6$mean_answer_correct)),lwd=2,col="blue",add=TRUE)
+colorListResult %>% filter(condition==8,age=="young") -> df_means_y8
+fromTo <- round(range(df_means_o8$mean_answer_correct),2)+c(-0.08,0.08)
+limits <- seq(from=fromTo[1], to=fromTo[2], by=0.02)
+hist(df_means_y8$mean_answer_correct,freq=FALSE,xlim = fromTo ,xlab = "Mittelwert korrekte Antworten",ylab = "relative Häufigkeit",breaks=limits,main = "Histogramm & Normalverteilung für Young, Setsize 8")
+rug(jitter(df_means_y8$mean_answer_correct))
+curve(dnorm(x,mean(df_means_y8$mean_answer_correct),sd(df_means_y8$mean_answer_correct)),lwd=2,col="blue",add=TRUE)
+
+```
+K Wert
+```{r}
+# Color List
+colorListResult %>% ungroup() %>% group_by(age,condition) %>%summarise(round(mean(hitRate),2),round(sd(hitRate),2),round(mean(falseAlarmRate),2),round(sd(falseAlarmRate),2),round(mean(k),2),round(sd(k),2),round(mean(kPashler),2),round(sd(kPashler),2)) ->df_KStat_data
+names(df_KStat_data) <- c("age","setsize","mean_hit_rate","sd_hit_rate","mean_false_alarm","sd_false_alarm","mean_k","sd_k","mean_kPashler","sd_kPashler")
+colorListResult %>% ungroup() %>% group_by(age,condition) %>%summarise(paste(round(mean(hitRate),2),"/",round(sd(hitRate),2)),paste(round(mean(falseAlarmRate),2),"/",round(sd(falseAlarmRate),2)),paste(round(mean(k),2),"/",round(sd(k),2)),paste(round(mean(kPashler),2),"/",round(sd(kPashler),2))) ->df_KStat
+names(df_KStat) <- c("age","Set Size","HitRate Mean/SD","False Alarm Mean/SD","k Mean (SD)","kPashler MEAN/SD")
+df_KStat %>% kable(caption = "Überblick Versuchsreihe Color objects K",align = "lcccccr")
+# Object List
+objectResult %>% ungroup() %>% group_by(age,setsize) %>%summarise(round(mean(hitRate),2),round(sd(hitRate),2),round(mean(falseAlarmRate),2),round(sd(falseAlarmRate),2),round(mean(k),2),round(sd(k),2),round(mean(kPashler),2),round(sd(kPashler),2)) ->df_O_KStat_data
+names(df_O_KStat_data) <- c("age","setsize","mean_hit_rate","sd_hit_rate","mean_false_alarm","sd_false_alarm","mean_k","sd_k","mean_kPashler","sd_kPashler")
+objectResult %>% ungroup() %>% group_by(age,setsize) %>%summarise(paste(round(mean(hitRate),2),"/",round(sd(hitRate),2)),paste(round(mean(falseAlarmRate),2),"/",round(sd(falseAlarmRate),2)),paste(round(mean(k),2),"/",round(sd(k),2)),paste(round(mean(kPashler),2),"/",round(sd(kPashler),2))) ->df_O_KStat
+names(df_O_KStat) <- c("age","Set Size","HitRate Mean/SD","False Alarm Mean/SD","k Mean (SD)","kPashler MEAN/SD")
+df_O_KStat %>% kable(caption = "Überblick Versuchsreihe Real World Objects K",align = "lcccccr")
+
+#colorListResult %>% ungroup %>% group_by(age,condition) %>% summarise(round(max(k),2)) %>% kable(caption = "Überblick Versuchsreihe Colors k Wert",align = "lcr")
+#colorListResult %>% ungroup %>% group_by(age,condition) %>% summarise(round(max(kPashler),2)) %>% kable(caption = "Überblick Versuchsreihe Colors kPashler Wert",align = "lcr")
+#objectResult %>% ungroup %>% group_by(age,setsize) %>% summarise(round(max(k),2)) %>% kable(caption = "Überblick Versuchsreihe Real world objects k Wert",align = "lcr")
+#objectResult %>% ungroup %>% group_by(age,setsize) %>% summarise(round(max(kPashler),2)) %>% kable(caption = "Überblick Versuchsreihe Real world objects kPashler Wert",align = "lcr")
+
+ggplot(df_KStat_data, aes(x=factor(setsize), y=mean_k, fill=factor(age))) + geom_bar(position=position_dodge(), stat="identity",colour="black",size=.3) +geom_errorbar(aes(ymin=mean_k-sd_k, ymax=mean_k+sd_k),size=.3,width=.2,position=position_dodge(.9))+xlab("Set Size") +ylab("Mean (k)") + scale_fill_hue(name="Age Group") + ggtitle("Color Test K value results per set size")
+
+ggplot(df_O_KStat_data, aes(x=factor(setsize), y=mean_k, fill=factor(age))) + geom_bar(position=position_dodge(), stat="identity",colour="black",size=.3) +geom_errorbar(aes(ymin=mean_k-sd_k, ymax=mean_k+sd_k),size=.3,width=.2,position=position_dodge(.9))+xlab("Set Size") +ylab("Mean (k)") + scale_fill_hue(name="Age Group") + ggtitle("Real World Objects Test K value results per set size")
+
+ggplot(df_KStat_data, aes(x=factor(setsize), y=mean_kPashler, fill=factor(age))) + geom_bar(position=position_dodge(), stat="identity",colour="black",size=.3) +geom_errorbar(aes(ymin=mean_kPashler-sd_kPashler, ymax=mean_kPashler+sd_kPashler),size=.3,width=.2,position=position_dodge(.9))+xlab("Set Size") +ylab("Mean (k-Pashler)") + scale_fill_hue(name="Age Group") + ggtitle("Color Test k-Pashler value results per set size")
+
+ggplot(df_O_KStat_data, aes(x=factor(setsize), y=mean_kPashler, fill=factor(age))) + geom_bar(position=position_dodge(), stat="identity",colour="black",size=.3) +geom_errorbar(aes(ymin=mean_kPashler-sd_kPashler, ymax=mean_kPashler+sd_kPashler),size=.3,width=.2,position=position_dodge(.9))+xlab("Set Size") +ylab("Mean (k-Pashler)") + scale_fill_hue(name="Age Group") + ggtitle("Real World Objects Test k-Pashler value results per set size")
+
+```
+Grafiken Für K-Werte
+
+```{r}
+colorListResult %>%  ggplot(mapping=aes(x=age, y=k,fill=age)) + geom_violin() + geom_jitter(width = 0.2, alpha = 0.6)+labs(title="Colors",subtitle = "distribution test persons mean value of k", x="age", y="mean k", fill="Answer")
+
+objectResult %>%  ggplot(mapping=aes(x=age, y=k,fill=age)) + geom_violin() + geom_jitter(width = 0.2, alpha = 0.6)+labs(title="Real world objects",subtitle = "distribution test persons mean value of k", x="age", y="mean k", fill="Answer")
+
+colorListResult %>%  ggplot(mapping=aes(x=age, y=k,fill=age))+ geom_violin() + geom_jitter(width = 0.2, alpha = 0.6)+facet_wrap(.~condition,scales = 'free')+labs(title="Colors",subtitle = "distribution test persons mean value of k", x="age", y="mean k", fill="Answer")
+
+objectResult %>%  ggplot(mapping=aes(x=age, y=k,fill=age))+ geom_violin() + geom_jitter(width = 0.2, alpha = 0.6)+facet_wrap(.~setsize,scales = 'free')+labs(title="Real world objects",subtitle = "distribution test persons mean value of k", x="age", y="mean k", fill="Answer")
+
+colorListResult %>%  ggplot(mapping=aes(x=age, y=k,fill=age)) + geom_boxplot() + geom_jitter(width = 0.2, alpha = 0.6)+labs(title="Colors",subtitle = "distribution test persons mean value of k", x="age", y="mean k", fill="Answer")
+
+objectResult %>%  ggplot(mapping=aes(x=age, y=k,fill=age)) + geom_boxplot() + geom_jitter(width = 0.2, alpha = 0.6)+labs(title="Real world objects",subtitle = "distribution test persons mean value of k", x="age", y="mean k", fill="Answer")
+
+colorListResult %>%  ggplot(mapping=aes(x=age, y=k,fill=age))+ geom_boxplot() + geom_jitter(width = 0.2, alpha = 0.6)+facet_wrap(.~condition,scales = 'free')+labs(title="Colors",subtitle = "distribution test persons mean value of k", x="age", y="mean k", fill="Answer")
+
+objectResult %>%  ggplot(mapping=aes(x=age, y=k,fill=age))+ geom_boxplot() + geom_jitter(width = 0.2, alpha = 0.6)+facet_wrap(.~setsize,scales = 'free')+labs(title="Real world objects",subtitle = "distribution test persons mean value of k", x="age", y="mean k", fill="Answer")
+
+####### K Barcharts ##########
+mkChart <- ggplot(colorListResult, aes(x = condition,y = k, col = factor(age), fill = factor(age)))
+
+```
+
+
+
+
+
+Unterschied zwischen Colors & Objekte
+H1: Änderungen von Real World Objekten werden von jungen Personen besser erkannt als Änderungen von Farben.
+H1: Änderungen von Real World Objekten werden von alten Personen besser erkannt als Änderungen von Farben.
+Notwendige Auswertungen:
+T-Test abhängige Stichprobe je alt und jung
+
+Voraussetzungen:
+
+Abhängige Variable ist intervallskaliert - ok
+Es liegen zwei verbundene Stichproben vor aber die Meßwertpaare sind unabhängig - ok
+Die Unterschiede zwischen den verbundenen Testwerten sind in der Grundgesamtheit normalverteilt.
+```{r}
+colorList %>% filter(condition <= 6) %>% summarise(mean(answer_correct)) -> df_mean_color_all
+
+
+```
+
