@@ -1,7 +1,7 @@
 ---
 title: "Colors vs Real-World Objects"
 output:
-  pdf_document: default
+ # pdf_document: default
   html_notebook: default
   '': default
 ---

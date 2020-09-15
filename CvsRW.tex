@@ -118,7 +118,7 @@
 Basic Setup
 
 \begin{verbatim}
-## -- Attaching packages --------------------------------------------------------------------------- tidyverse 1.3.0 --
+## -- Attaching packages ------------------------------------------------------------------------------------------------ tidyverse 1.3.0 --
 \end{verbatim}
 
 \begin{verbatim}
@@ -129,7 +129,7 @@ Basic Setup
 \end{verbatim}
 
 \begin{verbatim}
-## -- Conflicts ------------------------------------------------------------------------------ tidyverse_conflicts() --
+## -- Conflicts --------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
 ## x dplyr::filter() masks stats::filter()
 ## x dplyr::lag()    masks stats::lag()
 \end{verbatim}
@@ -1788,6 +1788,7 @@ Import Objects
 \begin{verbatim}
 ## `summarise()` ungrouping output (override with `.groups` argument)
 ## `summarise()` ungrouping output (override with `.groups` argument)
+## `summarise()` ungrouping output (override with `.groups` argument)
 \end{verbatim}
 
 join color \& objects
@@ -1796,7 +1797,10 @@ join color \& objects
 \begin{Highlighting}[]
 \NormalTok{colorListResult }\OperatorTok{%>%}\KeywordTok{ungroup}\NormalTok{() }\OperatorTok{%>%}\StringTok{  }\KeywordTok{select}\NormalTok{(age,condition,mean_answer_correct,mean_response_time,kPashler,k,joinKey) ->}\StringTok{ }\NormalTok{ColorJoin}
 \KeywordTok{names}\NormalTok{(ColorJoin) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"age_c"}\NormalTok{,}\StringTok{"condition_c"}\NormalTok{,}\StringTok{"mean_answer_correct_c"}\NormalTok{,}\StringTok{"mean_response_time_c"}\NormalTok{,}\StringTok{"kPashler_c"}\NormalTok{,}\StringTok{"k_c"}\NormalTok{,}\StringTok{"joinKey"}\NormalTok{) }
-\NormalTok{objectResult }\OperatorTok{%>%}\StringTok{ }\KeywordTok{inner_join}\NormalTok{(ColorJoin,}\DataTypeTok{by =} \StringTok{"joinKey"}\NormalTok{) ->}\StringTok{ }\NormalTok{testsJoined}
+\NormalTok{objectResult }\OperatorTok{%>%}\StringTok{ }\KeywordTok{inner_join}\NormalTok{(ColorJoin,}\DataTypeTok{by =} \StringTok{"joinKey"}\NormalTok{)  }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{diffAnswerRate =}\NormalTok{ mean_answer_correct}\OperatorTok{-}\NormalTok{mean_answer_correct_c)}\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{diffK =}\NormalTok{ k}\OperatorTok{-}\NormalTok{k_c)->}\StringTok{ }\NormalTok{testsJoined}
+\NormalTok{objectResultCondition }\OperatorTok{%>%}\StringTok{ }\KeywordTok{inner_join}\NormalTok{(ColorJoin,}\DataTypeTok{by =} \StringTok{"joinKey"}\NormalTok{) ->}\StringTok{ }\NormalTok{testConditionJoined}
 \NormalTok{colorListResult }\OperatorTok{%>%}\StringTok{ }\KeywordTok{ungroup}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(subject,age,condition,mean_answer_correct,mean_response_time,kPashler,k) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{test=}\StringTok{"color"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rename}\NormalTok{(}\DataTypeTok{setsize =}\NormalTok{ condition) ->}\StringTok{ }\NormalTok{ColorJoinLong}
 \NormalTok{objectResult }\OperatorTok{%>%}\StringTok{  }\KeywordTok{ungroup}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(subject,age,setsize,mean_answer_correct,mean_response_time,kPashler,k) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{test=}\StringTok{"object"}\NormalTok{) ->}\StringTok{ }\NormalTok{ObjectJoinLong}
 \NormalTok{joinedTestList =}\StringTok{ }\KeywordTok{rbind}\NormalTok{(ObjectJoinLong,ColorJoinLong)}
@@ -1900,6 +1904,12 @@ ProzentFalsch\tabularnewline
 6 & young & 3840 & 2911 & 929 & 76\% & 24\%\tabularnewline
 \bottomrule
 \end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#colorListResult %>% ungroup() %>% group_by(age,condition) %>% summarise(mean(hitRate),mean(falseAlarmRate),mean(k),mean(kPashler))%>% kable(caption = "Überblick Versuchsreihe Color objects K",align = "llcccrr")}
+\end{Highlighting}
+\end{Shaded}
 
 Plotte einen Überblick der Gesamtmenge
 
@@ -2283,7 +2293,8 @@ Normalverteilung:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{colorListResult }\OperatorTok{%>%}\StringTok{ }\NormalTok{ungroup }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(age,condition) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{summarise}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{max}\NormalTok{(k),}\DecValTok{2}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{kable}\NormalTok{(}\DataTypeTok{caption =} \StringTok{"Überblick Versuchsreihe Colors k Wert"}\NormalTok{,}\DataTypeTok{align =} \StringTok{"lcr"}\NormalTok{)}
+\CommentTok{# Color List}
+\NormalTok{colorListResult }\OperatorTok{%>%}\StringTok{ }\KeywordTok{ungroup}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(age,condition) }\OperatorTok{%>%}\KeywordTok{summarise}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(hitRate),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(hitRate),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(falseAlarmRate),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(falseAlarmRate),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(k),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(k),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(kPashler),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(kPashler),}\DecValTok{2}\NormalTok{)) ->df_KStat_data}
 \end{Highlighting}
 \end{Shaded}
 
@@ -2291,30 +2302,59 @@ Normalverteilung:
 ## `summarise()` regrouping output by 'age' (override with `.groups` argument)
 \end{verbatim}
 
-\begin{longtable}[]{@{}lcr@{}}
-\caption{Überblick Versuchsreihe Colors k Wert}\tabularnewline
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{names}\NormalTok{(df_KStat_data) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"age"}\NormalTok{,}\StringTok{"setsize"}\NormalTok{,}\StringTok{"mean_hit_rate"}\NormalTok{,}\StringTok{"sd_hit_rate"}\NormalTok{,}\StringTok{"mean_false_alarm"}\NormalTok{,}\StringTok{"sd_false_alarm"}\NormalTok{,}\StringTok{"mean_k"}\NormalTok{,}\StringTok{"sd_k"}\NormalTok{,}\StringTok{"mean_kPashler"}\NormalTok{,}\StringTok{"sd_kPashler"}\NormalTok{)}
+\NormalTok{colorListResult }\OperatorTok{%>%}\StringTok{ }\KeywordTok{ungroup}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(age,condition) }\OperatorTok{%>%}\KeywordTok{summarise}\NormalTok{(}\KeywordTok{paste}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(hitRate),}\DecValTok{2}\NormalTok{),}\StringTok{"/"}\NormalTok{,}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(hitRate),}\DecValTok{2}\NormalTok{)),}\KeywordTok{paste}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(falseAlarmRate),}\DecValTok{2}\NormalTok{),}\StringTok{"/"}\NormalTok{,}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(falseAlarmRate),}\DecValTok{2}\NormalTok{)),}\KeywordTok{paste}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(k),}\DecValTok{2}\NormalTok{),}\StringTok{"/"}\NormalTok{,}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(k),}\DecValTok{2}\NormalTok{)),}\KeywordTok{paste}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(kPashler),}\DecValTok{2}\NormalTok{),}\StringTok{"/"}\NormalTok{,}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(kPashler),}\DecValTok{2}\NormalTok{))) ->df_KStat}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `summarise()` regrouping output by 'age' (override with `.groups` argument)
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{names}\NormalTok{(df_KStat) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"age"}\NormalTok{,}\StringTok{"Set Size"}\NormalTok{,}\StringTok{"HitRate Mean/SD"}\NormalTok{,}\StringTok{"False Alarm Mean/SD"}\NormalTok{,}\StringTok{"k Mean (SD)"}\NormalTok{,}\StringTok{"kPashler MEAN/SD"}\NormalTok{)}
+\NormalTok{df_KStat }\OperatorTok{%>%}\StringTok{ }\KeywordTok{kable}\NormalTok{(}\DataTypeTok{caption =} \StringTok{"Überblick Versuchsreihe Color objects K"}\NormalTok{,}\DataTypeTok{align =} \StringTok{"lcccccr"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}lccccc@{}}
+\caption{Überblick Versuchsreihe Color objects K}\tabularnewline
 \toprule
-age & condition & round(max(k), 2)\tabularnewline
+age & Set Size & HitRate Mean/SD & False Alarm Mean/SD & k Mean (SD) &
+kPashler MEAN/SD\tabularnewline
 \midrule
 \endfirsthead
 \toprule
-age & condition & round(max(k), 2)\tabularnewline
+age & Set Size & HitRate Mean/SD & False Alarm Mean/SD & k Mean (SD) &
+kPashler MEAN/SD\tabularnewline
 \midrule
 \endhead
-old & 2 & 2.00\tabularnewline
-old & 4 & 3.06\tabularnewline
-old & 6 & 3.75\tabularnewline
-old & 8 & 2.91\tabularnewline
-young & 2 & 2.00\tabularnewline
-young & 4 & 3.75\tabularnewline
-young & 6 & 4.31\tabularnewline
-young & 8 & 3.80\tabularnewline
+old & 2 & 0.95 / 0.05 & 0.06 / 0.05 & 1.78 / 0.15 & 1.88 /
+0.11\tabularnewline
+old & 4 & 0.82 / 0.11 & 0.37 / 0.17 & 1.83 / 0.69 & 2.85 /
+0.78\tabularnewline
+old & 6 & 0.8 / 0.16 & 0.47 / 0.2 & 2.02 / 0.71 & 4.09 /
+1.28\tabularnewline
+old & 8 & 0.77 / 0.16 & 0.58 / 0.18 & 1.51 / 0.82 & 3.77 /
+2.19\tabularnewline
+young & 2 & 0.99 / 0.02 & 0.03 / 0.03 & 1.91 / 0.07 & 1.97 /
+0.04\tabularnewline
+young & 4 & 0.95 / 0.03 & 0.21 / 0.11 & 2.99 / 0.43 & 3.77 /
+0.17\tabularnewline
+young & 6 & 0.89 / 0.07 & 0.43 / 0.16 & 2.76 / 1 & 4.72 /
+0.9\tabularnewline
+young & 8 & 0.87 / 0.07 & 0.58 / 0.12 & 2.27 / 0.72 & 5.52 /
+0.98\tabularnewline
 \bottomrule
 \end{longtable}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{colorListResult }\OperatorTok{%>%}\StringTok{ }\NormalTok{ungroup }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(age,condition) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{summarise}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{max}\NormalTok{(kPashler),}\DecValTok{2}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{kable}\NormalTok{(}\DataTypeTok{caption =} \StringTok{"Überblick Versuchsreihe Colors kPashler Wert"}\NormalTok{,}\DataTypeTok{align =} \StringTok{"lcr"}\NormalTok{)}
+\CommentTok{# Object List}
+\NormalTok{objectResult }\OperatorTok{%>%}\StringTok{ }\KeywordTok{ungroup}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(age,setsize) }\OperatorTok{%>%}\KeywordTok{summarise}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(hitRate),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(hitRate),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(falseAlarmRate),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(falseAlarmRate),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(k),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(k),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(kPashler),}\DecValTok{2}\NormalTok{),}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(kPashler),}\DecValTok{2}\NormalTok{)) ->df_O_KStat_data}
 \end{Highlighting}
 \end{Shaded}
 
@@ -2322,86 +2362,159 @@ young & 8 & 3.80\tabularnewline
 ## `summarise()` regrouping output by 'age' (override with `.groups` argument)
 \end{verbatim}
 
-\begin{longtable}[]{@{}lcr@{}}
-\caption{Überblick Versuchsreihe Colors kPashler Wert}\tabularnewline
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{names}\NormalTok{(df_O_KStat_data) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"age"}\NormalTok{,}\StringTok{"setsize"}\NormalTok{,}\StringTok{"mean_hit_rate"}\NormalTok{,}\StringTok{"sd_hit_rate"}\NormalTok{,}\StringTok{"mean_false_alarm"}\NormalTok{,}\StringTok{"sd_false_alarm"}\NormalTok{,}\StringTok{"mean_k"}\NormalTok{,}\StringTok{"sd_k"}\NormalTok{,}\StringTok{"mean_kPashler"}\NormalTok{,}\StringTok{"sd_kPashler"}\NormalTok{)}
+\NormalTok{objectResult }\OperatorTok{%>%}\StringTok{ }\KeywordTok{ungroup}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(age,setsize) }\OperatorTok{%>%}\KeywordTok{summarise}\NormalTok{(}\KeywordTok{paste}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(hitRate),}\DecValTok{2}\NormalTok{),}\StringTok{"/"}\NormalTok{,}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(hitRate),}\DecValTok{2}\NormalTok{)),}\KeywordTok{paste}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(falseAlarmRate),}\DecValTok{2}\NormalTok{),}\StringTok{"/"}\NormalTok{,}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(falseAlarmRate),}\DecValTok{2}\NormalTok{)),}\KeywordTok{paste}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(k),}\DecValTok{2}\NormalTok{),}\StringTok{"/"}\NormalTok{,}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(k),}\DecValTok{2}\NormalTok{)),}\KeywordTok{paste}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{mean}\NormalTok{(kPashler),}\DecValTok{2}\NormalTok{),}\StringTok{"/"}\NormalTok{,}\KeywordTok{round}\NormalTok{(}\KeywordTok{sd}\NormalTok{(kPashler),}\DecValTok{2}\NormalTok{))) ->df_O_KStat}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `summarise()` regrouping output by 'age' (override with `.groups` argument)
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{names}\NormalTok{(df_O_KStat) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"age"}\NormalTok{,}\StringTok{"Set Size"}\NormalTok{,}\StringTok{"HitRate Mean/SD"}\NormalTok{,}\StringTok{"False Alarm Mean/SD"}\NormalTok{,}\StringTok{"k Mean (SD)"}\NormalTok{,}\StringTok{"kPashler MEAN/SD"}\NormalTok{)}
+\NormalTok{df_O_KStat }\OperatorTok{%>%}\StringTok{ }\KeywordTok{kable}\NormalTok{(}\DataTypeTok{caption =} \StringTok{"Überblick Versuchsreihe Real World Objects K"}\NormalTok{,}\DataTypeTok{align =} \StringTok{"lcccccr"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}lccccc@{}}
+\caption{Überblick Versuchsreihe Real World Objects K}\tabularnewline
 \toprule
-age & condition & round(max(kPashler), 2)\tabularnewline
+age & Set Size & HitRate Mean/SD & False Alarm Mean/SD & k Mean (SD) &
+kPashler MEAN/SD\tabularnewline
 \midrule
 \endfirsthead
 \toprule
-age & condition & round(max(kPashler), 2)\tabularnewline
+age & Set Size & HitRate Mean/SD & False Alarm Mean/SD & k Mean (SD) &
+kPashler MEAN/SD\tabularnewline
 \midrule
 \endhead
-old & 2 & 2.00\tabularnewline
-old & 4 & 4.00\tabularnewline
-old & 6 & 6.00\tabularnewline
-old & 8 & 7.27\tabularnewline
-young & 2 & 2.00\tabularnewline
-young & 4 & 4.00\tabularnewline
-young & 6 & 6.00\tabularnewline
-young & 8 & 7.11\tabularnewline
+old & 2 & 0.87 / 0.07 & 0.03 / 0.03 & 1.69 / 0.13 & 1.74 /
+0.13\tabularnewline
+old & 4 & 0.77 / 0.07 & 0.17 / 0.07 & 2.39 / 0.27 & 2.89 /
+0.31\tabularnewline
+old & 6 & 0.75 / 0.12 & 0.36 / 0.13 & 2.37 / 0.46 & 3.76 /
+0.85\tabularnewline
+young & 2 & 0.92 / 0.04 & 0.04 / 0.03 & 1.76 / 0.1 & 1.82 /
+0.09\tabularnewline
+young & 4 & 0.83 / 0.05 & 0.14 / 0.07 & 2.77 / 0.31 & 3.22 /
+0.22\tabularnewline
+young & 6 & 0.82 / 0.07 & 0.3 / 0.1 & 3.1 / 0.5 & 4.47 /
+0.52\tabularnewline
 \bottomrule
 \end{longtable}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{objectResult }\OperatorTok{%>%}\StringTok{ }\NormalTok{ungroup }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(age,setsize) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{summarise}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{max}\NormalTok{(k),}\DecValTok{2}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{kable}\NormalTok{(}\DataTypeTok{caption =} \StringTok{"Überblick Versuchsreihe Real world objects k Wert"}\NormalTok{,}\DataTypeTok{align =} \StringTok{"lcr"}\NormalTok{)}
+\CommentTok{#colorListResult %>% ungroup %>% group_by(age,condition) %>% summarise(round(max(k),2)) %>% kable(caption = "Überblick Versuchsreihe Colors k Wert",align = "lcr")}
+\CommentTok{#colorListResult %>% ungroup %>% group_by(age,condition) %>% summarise(round(max(kPashler),2)) %>% kable(caption = "Überblick Versuchsreihe Colors kPashler Wert",align = "lcr")}
+\CommentTok{#objectResult %>% ungroup %>% group_by(age,setsize) %>% summarise(round(max(k),2)) %>% kable(caption = "Überblick Versuchsreihe Real world objects k Wert",align = "lcr")}
+\CommentTok{#objectResult %>% ungroup %>% group_by(age,setsize) %>% summarise(round(max(kPashler),2)) %>% kable(caption = "Überblick Versuchsreihe Real world objects kPashler Wert",align = "lcr")}
+
+\KeywordTok{ggplot}\NormalTok{(df_KStat_data, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{factor}\NormalTok{(setsize), }\DataTypeTok{y=}\NormalTok{mean_k, }\DataTypeTok{fill=}\KeywordTok{factor}\NormalTok{(age))) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_bar}\NormalTok{(}\DataTypeTok{position=}\KeywordTok{position_dodge}\NormalTok{(), }\DataTypeTok{stat=}\StringTok{"identity"}\NormalTok{,}\DataTypeTok{colour=}\StringTok{"black"}\NormalTok{,}\DataTypeTok{size=}\NormalTok{.}\DecValTok{3}\NormalTok{) }\OperatorTok{+}\KeywordTok{geom_errorbar}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymin=}\NormalTok{mean_k}\OperatorTok{-}\NormalTok{sd_k, }\DataTypeTok{ymax=}\NormalTok{mean_k}\OperatorTok{+}\NormalTok{sd_k),}\DataTypeTok{size=}\NormalTok{.}\DecValTok{3}\NormalTok{,}\DataTypeTok{width=}\NormalTok{.}\DecValTok{2}\NormalTok{,}\DataTypeTok{position=}\KeywordTok{position_dodge}\NormalTok{(.}\DecValTok{9}\NormalTok{))}\OperatorTok{+}\KeywordTok{xlab}\NormalTok{(}\StringTok{"Set Size"}\NormalTok{) }\OperatorTok{+}\KeywordTok{ylab}\NormalTok{(}\StringTok{"Mean (k)"}\NormalTok{) }\OperatorTok{+}\StringTok{ }\KeywordTok{scale_fill_hue}\NormalTok{(}\DataTypeTok{name=}\StringTok{"Age Group"}\NormalTok{) }\OperatorTok{+}\StringTok{ }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"Color Test K value results per set size"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## `summarise()` regrouping output by 'age' (override with `.groups` argument)
-\end{verbatim}
-
-\begin{longtable}[]{@{}lcr@{}}
-\caption{Überblick Versuchsreihe Real world objects k
-Wert}\tabularnewline
-\toprule
-age & setsize & round(max(k), 2)\tabularnewline
-\midrule
-\endfirsthead
-\toprule
-age & setsize & round(max(k), 2)\tabularnewline
-\midrule
-\endhead
-old & 2 & 1.96\tabularnewline
-old & 4 & 2.83\tabularnewline
-old & 6 & 3.25\tabularnewline
-young & 2 & 1.96\tabularnewline
-young & 4 & 3.38\tabularnewline
-young & 6 & 3.94\tabularnewline
-\bottomrule
-\end{longtable}
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-13-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{objectResult }\OperatorTok{%>%}\StringTok{ }\NormalTok{ungroup }\OperatorTok{%>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(age,setsize) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{summarise}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\KeywordTok{max}\NormalTok{(kPashler),}\DecValTok{2}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{kable}\NormalTok{(}\DataTypeTok{caption =} \StringTok{"Überblick Versuchsreihe Real world objects kPashler Wert"}\NormalTok{,}\DataTypeTok{align =} \StringTok{"lcr"}\NormalTok{)}
+\KeywordTok{ggplot}\NormalTok{(df_O_KStat_data, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{factor}\NormalTok{(setsize), }\DataTypeTok{y=}\NormalTok{mean_k, }\DataTypeTok{fill=}\KeywordTok{factor}\NormalTok{(age))) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_bar}\NormalTok{(}\DataTypeTok{position=}\KeywordTok{position_dodge}\NormalTok{(), }\DataTypeTok{stat=}\StringTok{"identity"}\NormalTok{,}\DataTypeTok{colour=}\StringTok{"black"}\NormalTok{,}\DataTypeTok{size=}\NormalTok{.}\DecValTok{3}\NormalTok{) }\OperatorTok{+}\KeywordTok{geom_errorbar}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymin=}\NormalTok{mean_k}\OperatorTok{-}\NormalTok{sd_k, }\DataTypeTok{ymax=}\NormalTok{mean_k}\OperatorTok{+}\NormalTok{sd_k),}\DataTypeTok{size=}\NormalTok{.}\DecValTok{3}\NormalTok{,}\DataTypeTok{width=}\NormalTok{.}\DecValTok{2}\NormalTok{,}\DataTypeTok{position=}\KeywordTok{position_dodge}\NormalTok{(.}\DecValTok{9}\NormalTok{))}\OperatorTok{+}\KeywordTok{xlab}\NormalTok{(}\StringTok{"Set Size"}\NormalTok{) }\OperatorTok{+}\KeywordTok{ylab}\NormalTok{(}\StringTok{"Mean (k)"}\NormalTok{) }\OperatorTok{+}\StringTok{ }\KeywordTok{scale_fill_hue}\NormalTok{(}\DataTypeTok{name=}\StringTok{"Age Group"}\NormalTok{) }\OperatorTok{+}\StringTok{ }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"Real World Objects Test K value results per set size"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## `summarise()` regrouping output by 'age' (override with `.groups` argument)
-\end{verbatim}
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-13-2.pdf}
 
-\begin{longtable}[]{@{}lcr@{}}
-\caption{Überblick Versuchsreihe Real world objects kPashler
-Wert}\tabularnewline
-\toprule
-age & setsize & round(max(kPashler), 2)\tabularnewline
-\midrule
-\endfirsthead
-\toprule
-age & setsize & round(max(kPashler), 2)\tabularnewline
-\midrule
-\endhead
-old & 2 & 1.96\tabularnewline
-old & 4 & 3.53\tabularnewline
-old & 6 & 4.96\tabularnewline
-young & 2 & 1.98\tabularnewline
-young & 4 & 3.64\tabularnewline
-young & 6 & 5.52\tabularnewline
-\bottomrule
-\end{longtable}
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{ggplot}\NormalTok{(df_KStat_data, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{factor}\NormalTok{(setsize), }\DataTypeTok{y=}\NormalTok{mean_kPashler, }\DataTypeTok{fill=}\KeywordTok{factor}\NormalTok{(age))) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_bar}\NormalTok{(}\DataTypeTok{position=}\KeywordTok{position_dodge}\NormalTok{(), }\DataTypeTok{stat=}\StringTok{"identity"}\NormalTok{,}\DataTypeTok{colour=}\StringTok{"black"}\NormalTok{,}\DataTypeTok{size=}\NormalTok{.}\DecValTok{3}\NormalTok{) }\OperatorTok{+}\KeywordTok{geom_errorbar}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymin=}\NormalTok{mean_kPashler}\OperatorTok{-}\NormalTok{sd_kPashler, }\DataTypeTok{ymax=}\NormalTok{mean_kPashler}\OperatorTok{+}\NormalTok{sd_kPashler),}\DataTypeTok{size=}\NormalTok{.}\DecValTok{3}\NormalTok{,}\DataTypeTok{width=}\NormalTok{.}\DecValTok{2}\NormalTok{,}\DataTypeTok{position=}\KeywordTok{position_dodge}\NormalTok{(.}\DecValTok{9}\NormalTok{))}\OperatorTok{+}\KeywordTok{xlab}\NormalTok{(}\StringTok{"Set Size"}\NormalTok{) }\OperatorTok{+}\KeywordTok{ylab}\NormalTok{(}\StringTok{"Mean (k-Pashler)"}\NormalTok{) }\OperatorTok{+}\StringTok{ }\KeywordTok{scale_fill_hue}\NormalTok{(}\DataTypeTok{name=}\StringTok{"Age Group"}\NormalTok{) }\OperatorTok{+}\StringTok{ }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"Color Test k-Pashler value results per set size"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-13-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{ggplot}\NormalTok{(df_O_KStat_data, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{factor}\NormalTok{(setsize), }\DataTypeTok{y=}\NormalTok{mean_kPashler, }\DataTypeTok{fill=}\KeywordTok{factor}\NormalTok{(age))) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_bar}\NormalTok{(}\DataTypeTok{position=}\KeywordTok{position_dodge}\NormalTok{(), }\DataTypeTok{stat=}\StringTok{"identity"}\NormalTok{,}\DataTypeTok{colour=}\StringTok{"black"}\NormalTok{,}\DataTypeTok{size=}\NormalTok{.}\DecValTok{3}\NormalTok{) }\OperatorTok{+}\KeywordTok{geom_errorbar}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymin=}\NormalTok{mean_kPashler}\OperatorTok{-}\NormalTok{sd_kPashler, }\DataTypeTok{ymax=}\NormalTok{mean_kPashler}\OperatorTok{+}\NormalTok{sd_kPashler),}\DataTypeTok{size=}\NormalTok{.}\DecValTok{3}\NormalTok{,}\DataTypeTok{width=}\NormalTok{.}\DecValTok{2}\NormalTok{,}\DataTypeTok{position=}\KeywordTok{position_dodge}\NormalTok{(.}\DecValTok{9}\NormalTok{))}\OperatorTok{+}\KeywordTok{xlab}\NormalTok{(}\StringTok{"Set Size"}\NormalTok{) }\OperatorTok{+}\KeywordTok{ylab}\NormalTok{(}\StringTok{"Mean (k-Pashler)"}\NormalTok{) }\OperatorTok{+}\StringTok{ }\KeywordTok{scale_fill_hue}\NormalTok{(}\DataTypeTok{name=}\StringTok{"Age Group"}\NormalTok{) }\OperatorTok{+}\StringTok{ }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"Real World Objects Test k-Pashler value results per set size"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-13-4.pdf}
+Grafiken Für K-Werte
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorListResult }\OperatorTok{%>%}\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{mapping=}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{age, }\DataTypeTok{y=}\NormalTok{k,}\DataTypeTok{fill=}\NormalTok{age)) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_violin}\NormalTok{() }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_jitter}\NormalTok{(}\DataTypeTok{width =} \FloatTok{0.2}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.6}\NormalTok{)}\OperatorTok{+}\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title=}\StringTok{"Colors"}\NormalTok{,}\DataTypeTok{subtitle =} \StringTok{"distribution test persons mean value of k"}\NormalTok{, }\DataTypeTok{x=}\StringTok{"age"}\NormalTok{, }\DataTypeTok{y=}\StringTok{"mean k"}\NormalTok{, }\DataTypeTok{fill=}\StringTok{"Answer"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-14-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{objectResult }\OperatorTok{%>%}\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{mapping=}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{age, }\DataTypeTok{y=}\NormalTok{k,}\DataTypeTok{fill=}\NormalTok{age)) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_violin}\NormalTok{() }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_jitter}\NormalTok{(}\DataTypeTok{width =} \FloatTok{0.2}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.6}\NormalTok{)}\OperatorTok{+}\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title=}\StringTok{"Real world objects"}\NormalTok{,}\DataTypeTok{subtitle =} \StringTok{"distribution test persons mean value of k"}\NormalTok{, }\DataTypeTok{x=}\StringTok{"age"}\NormalTok{, }\DataTypeTok{y=}\StringTok{"mean k"}\NormalTok{, }\DataTypeTok{fill=}\StringTok{"Answer"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-14-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorListResult }\OperatorTok{%>%}\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{mapping=}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{age, }\DataTypeTok{y=}\NormalTok{k,}\DataTypeTok{fill=}\NormalTok{age))}\OperatorTok{+}\StringTok{ }\KeywordTok{geom_violin}\NormalTok{() }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_jitter}\NormalTok{(}\DataTypeTok{width =} \FloatTok{0.2}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.6}\NormalTok{)}\OperatorTok{+}\KeywordTok{facet_wrap}\NormalTok{(.}\OperatorTok{~}\NormalTok{condition,}\DataTypeTok{scales =} \StringTok{'free'}\NormalTok{)}\OperatorTok{+}\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title=}\StringTok{"Colors"}\NormalTok{,}\DataTypeTok{subtitle =} \StringTok{"distribution test persons mean value of k"}\NormalTok{, }\DataTypeTok{x=}\StringTok{"age"}\NormalTok{, }\DataTypeTok{y=}\StringTok{"mean k"}\NormalTok{, }\DataTypeTok{fill=}\StringTok{"Answer"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-14-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{objectResult }\OperatorTok{%>%}\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{mapping=}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{age, }\DataTypeTok{y=}\NormalTok{k,}\DataTypeTok{fill=}\NormalTok{age))}\OperatorTok{+}\StringTok{ }\KeywordTok{geom_violin}\NormalTok{() }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_jitter}\NormalTok{(}\DataTypeTok{width =} \FloatTok{0.2}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.6}\NormalTok{)}\OperatorTok{+}\KeywordTok{facet_wrap}\NormalTok{(.}\OperatorTok{~}\NormalTok{setsize,}\DataTypeTok{scales =} \StringTok{'free'}\NormalTok{)}\OperatorTok{+}\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title=}\StringTok{"Real world objects"}\NormalTok{,}\DataTypeTok{subtitle =} \StringTok{"distribution test persons mean value of k"}\NormalTok{, }\DataTypeTok{x=}\StringTok{"age"}\NormalTok{, }\DataTypeTok{y=}\StringTok{"mean k"}\NormalTok{, }\DataTypeTok{fill=}\StringTok{"Answer"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-14-4.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorListResult }\OperatorTok{%>%}\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{mapping=}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{age, }\DataTypeTok{y=}\NormalTok{k,}\DataTypeTok{fill=}\NormalTok{age)) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_boxplot}\NormalTok{() }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_jitter}\NormalTok{(}\DataTypeTok{width =} \FloatTok{0.2}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.6}\NormalTok{)}\OperatorTok{+}\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title=}\StringTok{"Colors"}\NormalTok{,}\DataTypeTok{subtitle =} \StringTok{"distribution test persons mean value of k"}\NormalTok{, }\DataTypeTok{x=}\StringTok{"age"}\NormalTok{, }\DataTypeTok{y=}\StringTok{"mean k"}\NormalTok{, }\DataTypeTok{fill=}\StringTok{"Answer"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-14-5.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{objectResult }\OperatorTok{%>%}\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{mapping=}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{age, }\DataTypeTok{y=}\NormalTok{k,}\DataTypeTok{fill=}\NormalTok{age)) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_boxplot}\NormalTok{() }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_jitter}\NormalTok{(}\DataTypeTok{width =} \FloatTok{0.2}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.6}\NormalTok{)}\OperatorTok{+}\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title=}\StringTok{"Real world objects"}\NormalTok{,}\DataTypeTok{subtitle =} \StringTok{"distribution test persons mean value of k"}\NormalTok{, }\DataTypeTok{x=}\StringTok{"age"}\NormalTok{, }\DataTypeTok{y=}\StringTok{"mean k"}\NormalTok{, }\DataTypeTok{fill=}\StringTok{"Answer"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-14-6.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorListResult }\OperatorTok{%>%}\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{mapping=}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{age, }\DataTypeTok{y=}\NormalTok{k,}\DataTypeTok{fill=}\NormalTok{age))}\OperatorTok{+}\StringTok{ }\KeywordTok{geom_boxplot}\NormalTok{() }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_jitter}\NormalTok{(}\DataTypeTok{width =} \FloatTok{0.2}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.6}\NormalTok{)}\OperatorTok{+}\KeywordTok{facet_wrap}\NormalTok{(.}\OperatorTok{~}\NormalTok{condition,}\DataTypeTok{scales =} \StringTok{'free'}\NormalTok{)}\OperatorTok{+}\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title=}\StringTok{"Colors"}\NormalTok{,}\DataTypeTok{subtitle =} \StringTok{"distribution test persons mean value of k"}\NormalTok{, }\DataTypeTok{x=}\StringTok{"age"}\NormalTok{, }\DataTypeTok{y=}\StringTok{"mean k"}\NormalTok{, }\DataTypeTok{fill=}\StringTok{"Answer"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-14-7.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{objectResult }\OperatorTok{%>%}\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{mapping=}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{age, }\DataTypeTok{y=}\NormalTok{k,}\DataTypeTok{fill=}\NormalTok{age))}\OperatorTok{+}\StringTok{ }\KeywordTok{geom_boxplot}\NormalTok{() }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_jitter}\NormalTok{(}\DataTypeTok{width =} \FloatTok{0.2}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.6}\NormalTok{)}\OperatorTok{+}\KeywordTok{facet_wrap}\NormalTok{(.}\OperatorTok{~}\NormalTok{setsize,}\DataTypeTok{scales =} \StringTok{'free'}\NormalTok{)}\OperatorTok{+}\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title=}\StringTok{"Real world objects"}\NormalTok{,}\DataTypeTok{subtitle =} \StringTok{"distribution test persons mean value of k"}\NormalTok{, }\DataTypeTok{x=}\StringTok{"age"}\NormalTok{, }\DataTypeTok{y=}\StringTok{"mean k"}\NormalTok{, }\DataTypeTok{fill=}\StringTok{"Answer"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{CvsRW_files/figure-latex/unnamed-chunk-14-8.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{####### K Barcharts ##########}
+\NormalTok{mkChart <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(colorListResult, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ condition,}\DataTypeTok{y =}\NormalTok{ k, }\DataTypeTok{col =} \KeywordTok{factor}\NormalTok{(age), }\DataTypeTok{fill =} \KeywordTok{factor}\NormalTok{(age)))}
+\end{Highlighting}
+\end{Shaded}
 
 Unterschied zwischen Colors \& Objekte H1: Änderungen von Real World
 Objekten werden von jungen Personen besser erkannt als Änderungen von
