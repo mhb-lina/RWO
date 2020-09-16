@@ -1,7 +1,7 @@
 ---
 title: "Colors vs Real-World Objects"
 output:
- # pdf_document: default
+  #pdf_document: default
   html_notebook: default
   '': default
 ---
@@ -17,6 +17,7 @@ library(mosaic)
 library(ggplot2)
 library(scales)
 require(knitr)
+library(gridExtra)
 setwd("/home/lina/CvsRWO/")
 ```
 Import Colors
@@ -76,6 +77,7 @@ summarize(colorGroup,
             mutate(kPashler = condition*(hitRate-falseAlarmRate)/(1-falseAlarmRate)) %>% 
             mutate(k = condition*(hitRate - falseAlarmRate)) %>% 
             mutate(joinKey = paste0(subject,condition)) -> colorListResult
+
 ```
 
 Import Objects
@@ -131,8 +133,8 @@ summarise(objectGroupBySubAgeSet, totalCases = n(),
   mutate(k = setsize*(hitRate-falseAlarmRate)) %>% 
   mutate(kPashler = setsize*(hitRate-falseAlarmRate)/(1-falseAlarmRate)) %>% 
   mutate(joinKey = paste0(subject,setsize)) -> objectResult
-objectGroupBySubAgeSetCon <- group_by(objectList, subject, age, setsize,condition_text)
-summarise(objectGroupBySubAgeSetCon, totalCases = n(), 
+objectGroupBySubAgeSetCon <- group_by(objectList, subject, age, setsize,condition)
+summarise(objectGroupBySubAgeSetCon, totalCases = n(),
           mean_answer_correct = mean(answer_correct),
           mean_response_time = mean(time_1),
           median_response_time = median(time_1),
@@ -150,6 +152,9 @@ summarise(objectGroupBySubAgeSetCon, totalCases = n(),
   mutate(k = setsize*(hitRate-falseAlarmRate)) %>% 
   mutate(kPashler = setsize*(hitRate-falseAlarmRate)/(1-falseAlarmRate)) %>% 
   mutate(joinKey = paste0(subject,setsize)) -> objectResultCondition
+############################
+
+
 objectGroupBySubject <- group_by(objectList, subject, age)
 summarise(objectGroupBySubject, 
           SetSize2_correct = mean(answer_correct[setsize == 2]),
@@ -171,84 +176,143 @@ summarise(objectGroupBySubject,
 
 objectGroupAge <- group_by(objectResult, age)
 summarise(objectGroupAge,
+          SetSizeTotal = mean(mean_answer_correct),
           SetSize2 = mean(mean_answer_correct[setsize == 2]),
           SetSize4 = mean(mean_answer_correct[setsize == 4]),
           SetSize6 = mean(mean_answer_correct[setsize == 6]),
+          hitTotal = mean(hit),
           hit_2 = mean(hit[setsize == 2]),
           hit_4 = mean(hit[setsize == 4]),
           hit_6 = mean(hit[setsize == 6]),
+          missTotal = mean(miss),
           miss_2 = mean(miss[setsize == 2]),
           miss_4 = mean(miss[setsize == 4]),
           miss_6 = mean(miss[setsize == 6]),
+          falseAlarmRateTotal = mean(falseAlarmRate),
           falseAlarmRate_Set_2 = mean(falseAlarmRate[setsize == 2]),
           falseAlarmRate_Set_4 = mean(falseAlarmRate[setsize == 4]),
           falseAlarmRate_Set_6 = mean(falseAlarmRate[setsize == 6]),
+          HitRate_SetTotal = mean(hitRate),
           HitRate_Set_2 = mean(hitRate[setsize == 2]),
           HitRate_Set_4 = mean(hitRate[setsize == 4]),
           HitRate_Set_6 = mean(hitRate[setsize == 6]),
+          K_Total_mean = mean(k),
           K_2_mean = mean(k[setsize == 2]),
           K_4_mean = mean(k[setsize == 4]),
           K_6_mean = mean(k[setsize == 6]),
+          K_2_medianTotal = median(k),
           K_2_median = median(k[setsize == 2]),
           K_4_median = median(k[setsize == 4]),
           K_6_median = median(k[setsize == 6]),
+          K_Total_Max = max(k),
           K_2_Max = max(k[setsize == 2]),
           K_4_Max = max(k[setsize == 4]),
-          K_6_Max = max(k[setsize == 6])) -> objectResultGroupAge
+          K_6_Max = max(k[setsize == 6]),
+          K_PTotal_mean = mean(kPashler),
+          K_P2_mean = mean(kPashler[setsize == 2]),
+          K_P4_mean = mean(kPashler[setsize == 4]),
+          K_P6_mean = mean(kPashler[setsize == 6]),
+          K_PTotal_median = median(kPashler),
+          K_P2_median = median(kPashler[setsize == 2]),
+          K_P4_median = median(kPashler[setsize == 4]),
+          K_P6_median = median(kPashler[setsize == 6]),
+          K_PTotal_Max = max(kPashler),
+          K_P2_Max = max(kPashler[setsize == 2]),
+          K_P4_Max = max(kPashler[setsize == 4]),
+          K_P6_Max = max(kPashler[setsize == 6])) -> objectResultGroupAge
 
-objectGroupAgeCon <- group_by(objectResultCondition, age)
+objectGroupAgeCon <- group_by(objectResultCondition, condition)
 summarise(objectGroupAgeCon,
+          SetSizeTotal = mean(mean_answer_correct),
           SetSize2 = mean(mean_answer_correct[setsize == 2]),
           SetSize4 = mean(mean_answer_correct[setsize == 4]),
           SetSize6 = mean(mean_answer_correct[setsize == 6]),
+          hitTotal = mean(hit),
           hit_2 = mean(hit[setsize == 2]),
           hit_4 = mean(hit[setsize == 4]),
           hit_6 = mean(hit[setsize == 6]),
+          missTotal = mean(miss),
           miss_2 = mean(miss[setsize == 2]),
           miss_4 = mean(miss[setsize == 4]),
           miss_6 = mean(miss[setsize == 6]),
+          falseAlarmRateTotal = mean(falseAlarmRate),
           falseAlarmRate_Set_2 = mean(falseAlarmRate[setsize == 2]),
           falseAlarmRate_Set_4 = mean(falseAlarmRate[setsize == 4]),
           falseAlarmRate_Set_6 = mean(falseAlarmRate[setsize == 6]),
+          HitRate_SetTotal = mean(hitRate),
           HitRate_Set_2 = mean(hitRate[setsize == 2]),
           HitRate_Set_4 = mean(hitRate[setsize == 4]),
           HitRate_Set_6 = mean(hitRate[setsize == 6]),
+          K_Total_mean = mean(k),
           K_2_mean = mean(k[setsize == 2]),
           K_4_mean = mean(k[setsize == 4]),
           K_6_mean = mean(k[setsize == 6]),
+          K_2_medianTotal = median(k),
           K_2_median = median(k[setsize == 2]),
           K_4_median = median(k[setsize == 4]),
           K_6_median = median(k[setsize == 6]),
+          K_Total_Max = max(k),
           K_2_Max = max(k[setsize == 2]),
           K_4_Max = max(k[setsize == 4]),
-          K_6_Max = max(k[setsize == 6])) -> objectResultGroupAgeCondition
+          K_6_Max = max(k[setsize == 6]),
+          K_PTotal_mean = mean(kPashler),
+          K_P2_mean = mean(kPashler[setsize == 2]),
+          K_P4_mean = mean(kPashler[setsize == 4]),
+          K_P6_mean = mean(kPashler[setsize == 6]),
+          K_PTotal_median = median(kPashler),
+          K_P2_median = median(kPashler[setsize == 2]),
+          K_P4_median = median(kPashler[setsize == 4]),
+          K_P6_median = median(kPashler[setsize == 6]),
+          K_PTotal_Max = max(kPashler),
+          K_P2_Max = max(kPashler[setsize == 2]),
+          K_P4_Max = max(kPashler[setsize == 4]),
+          K_P6_Max = max(kPashler[setsize == 6])) -> objectResultGroupAgeCondition
 
 colorGroupAge <- group_by(colorListResult, age)
 summarise(colorGroupAge,
+          SetSizeTotal = mean(mean_answer_correct),
           SetSize2 = mean(mean_answer_correct[condition == 2]),
           SetSize4 = mean(mean_answer_correct[condition == 4]),
           SetSize6 = mean(mean_answer_correct[condition == 6]),
+          hitTotal = mean(hit),
           hit_2 = mean(hit[condition == 2]),
           hit_4 = mean(hit[condition == 4]),
           hit_6 = mean(hit[condition == 6]),
+          missTotal = mean(miss),
           miss_2 = mean(miss[condition == 2]),
           miss_4 = mean(miss[condition == 4]),
           miss_6 = mean(miss[condition == 6]),
+          falseAlarmRateTotal = mean(falseAlarmRate),
           falseAlarmRate_Set_2 = mean(falseAlarmRate[condition == 2]),
           falseAlarmRate_Set_4 = mean(falseAlarmRate[condition == 4]),
           falseAlarmRate_Set_6 = mean(falseAlarmRate[condition == 6]),
+          HitRate_SetTotal = mean(hitRate),
           HitRate_Set_2 = mean(hitRate[condition == 2]),
           HitRate_Set_4 = mean(hitRate[condition == 4]),
           HitRate_Set_6 = mean(hitRate[condition == 6]),
+          K_Total_mean = mean(k),
           K_2_mean = mean(k[condition == 2]),
           K_4_mean = mean(k[condition == 4]),
           K_6_mean = mean(k[condition == 6]),
           K_2_median = median(k[condition == 2]),
           K_4_median = median(k[condition == 4]),
           K_6_median = median(k[condition == 6]),
+          K_Total_Max = max(k),
           K_2_Max = max(k[condition == 2]),
           K_4_Max = max(k[condition == 4]),
-          K_6_Max = max(k[condition == 6])) -> colorResultGroupAge
+          K_6_Max = max(k[condition == 6]),
+          K_PTotal_mean = mean(kPashler),
+          K_P2_mean = mean(kPashler[condition == 2]),
+          K_P4_mean = mean(kPashler[condition == 4]),
+          K_P6_mean = mean(kPashler[condition == 6]),
+          K_PTotal_median = median(kPashler),
+          K_P2_median = median(kPashler[condition == 2]),
+          K_P4_median = median(kPashler[condition == 4]),
+          K_P6_median = median(kPashler[condition == 6]),
+          K_PTotal_Max = max(kPashler),
+          K_P2_Max = max(kPashler[condition == 2]),
+          K_P4_Max = max(kPashler[condition == 4]),
+          K_P6_Max = max(kPashler[condition == 6])) -> colorResultGroupAge
 
 ```
 join color & objects
@@ -289,7 +353,22 @@ objectList %>% group_by(setsize,age) %>% summarise(Gesamt = n(),Richtig = sum(an
 
 #colorListResult %>% ungroup() %>% group_by(age,condition) %>% summarise(mean(hitRate),mean(falseAlarmRate),mean(k),mean(kPashler))%>% kable(caption = "Überblick Versuchsreihe Color objects K",align = "llcccrr")
 
+colorResultGroupAge %>% select(age,SetSizeTotal,SetSize2,SetSize4,SetSize6,K_Total_mean,K_2_mean,K_4_mean,K_6_mean,K_PTotal_mean,K_P2_mean,K_P4_mean,K_P6_mean) -> df_Color_Compress
+df_Color_Compress[2,-1] - df_Color_Compress[1,-1] -> df_Color_diff
 
+colorResultGroupAge %>% select(age,SetSizeTotal,SetSize2,SetSize4,SetSize6,K_Total_mean,K_2_mean,K_4_mean,K_6_mean,K_PTotal_mean,K_P2_mean,K_P4_mean,K_P6_mean) %>% mutate_if(is.numeric, round,digits=2) %>% kable(caption = "Überblick Color Objekte Mittelwerte korrekte Antworten und K-Werte",align = "lcccccccccccr")
+
+objectResultGroupAge %>% select(age,SetSizeTotal,SetSize2,SetSize4,SetSize6,K_Total_mean,K_2_mean,K_4_mean,K_6_mean,K_PTotal_mean,K_P2_mean,K_P4_mean,K_P6_mean) %>% mutate_if(is.numeric, round,digits=2) %>% kable(caption = "Überblick Real World Objekte Mittelwerte korrekte Antworten und K-Werte",align = "lcccccccccccr")
+
+objectResultGroupAge %>% select(age,SetSizeTotal,SetSize2,SetSize4,SetSize6,K_Total_mean,K_2_mean,K_4_mean,K_6_mean,K_PTotal_mean,K_P2_mean,K_P4_mean,K_P6_mean) -> df_Object_Compress
+
+df_Object_Compress[2,-1] - df_Object_Compress[1,-1] -> df_Object_diff
+
+df_Color_diff %>% round(2) %>% kable(caption = "Abstand der Ergebnisse bei Color Objekten zwischen älteren Erwachsenen und jüngeren Erwachsenen",align = "lccccccccr")
+df_Object_diff %>% round(2) %>% kable(caption = "Abstand der Ergebnisse bei Real World Objekten zwischen älteren Erwachsenen und jüngeren Erwachsenen",align = "lccccccccr")
+df_Object_diff - df_Color_diff -> df_AltvsJung
+
+df_AltvsJung %>% round(2) %>% kable(caption = "Abstand der Ergebnisse bei Color vs. Real World Objekten zwischen älteren Erwachsenen und jüngeren Erwachsenen",align = "lccccccccr")
 ```
 
 
@@ -509,4 +588,18 @@ colorList %>% filter(condition <= 6) %>% summarise(mean(answer_correct)) -> df_m
 
 
 ```
+
+Prüfung einer Änderung durch Condition
+
+```{r}
+objectResultGroupAgeCondition %>% select(Condition=condition_text,Answer_Correct=SetSizeTotal,K=K_Total_mean,K_pashler=K_PTotal_mean,Kmax=K_Total_Max,KPmax=K_PTotal_Max) %>% mutate_if(is.numeric, round,digits=2) %>% kable(caption = "Überblick Versuchsreihe Real World Objects K",align = "lccccr")
+objectResultGroupAgeCondition %>% select(Condition=condition_text,SetSize=SetSizeTotal,K=K_Total_mean,K_pashler=K_PTotal_mean,Kmax=K_Total_Max,KPmax=K_PTotal_Max) %>% mutate_if(is.numeric, round,digits=2) -> objectCondition
+
+p1 <- ggplot(objectCondition, aes(x = Condition,y=SetSize))+geom_col()+scale_y_continuous(labels = scales::percent)+labs(title="Answer Correct",subtitle = "Ergebnisse je Condition", x="Condition", y="Mittelwert Richtige Antworten")+geom_text(aes(label=paste0(scales::percent(SetSize,0.01))),position = position_stack(vjust = 1.05),size=3)
+
+p2 <- ggplot(objectCondition, aes(x = Condition,y=K))+geom_col()+labs(title="K",subtitle = "Ergebnisse je Condition", x="Condition", y="Mittelwert K-Wert")+geom_text(aes(label=K_pashler),position = position_stack(vjust = 1.05),size=3)
+p3 <- ggplot(objectCondition, aes(x = Condition,y=K_pashler))+geom_col()+labs(title="K-Pashler",subtitle = "Ergebnisse je Condition", x="Condition", y="Mittelwert K-Pashler Wert")+geom_text(aes(label=K_pashler),position = position_stack(vjust = 1.05),size=3)
+grid.arrange(p1, p2,p3, nrow = 1)
+```
+
 
